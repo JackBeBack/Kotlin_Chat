@@ -21,6 +21,9 @@ dependencies {
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
+    //Langchain
+    implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
+    implementation("dev.langchain4j:langchain4j:0.31.0")
 }
 
 compose.desktop {
