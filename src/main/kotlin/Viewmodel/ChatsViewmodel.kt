@@ -4,6 +4,7 @@ import dev.ai4j.openai4j.chat.AssistantMessage
 import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.ChatMessage
 import dev.langchain4j.data.message.ChatMessageType
+import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.UserMessage
 import dev.langchain4j.model.StreamingResponseHandler
 import dev.langchain4j.model.output.Response
@@ -34,6 +35,13 @@ class ChatsModel() {
     fun appendUserMessage(message: String) {
         val newHistory = _currentChat.value.toMutableList().apply {
             add(UserMessage.from(message))
+        }
+        _currentChat.tryEmit(newHistory)
+    }
+
+    fun setSystemMessage(message: String) {
+        val newHistory = _currentChat.value.toMutableList().apply {
+            add(SystemMessage.from(message))
         }
         _currentChat.tryEmit(newHistory)
     }

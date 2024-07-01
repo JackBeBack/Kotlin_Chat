@@ -30,6 +30,10 @@ fun ChatView(){
     val chat = remember { ChatsModel.instance }
     val chatHistory by chat.currentChat.collectAsState()
 
+    LaunchedEffect(Unit){
+        chat.setSystemMessage("you are a Pirate")
+    }
+
     val leftButtonOptions = listOf<TextInputOption>(
         TextInputOption(Icons.AutoMirrored.Default.ExitToApp, "AI Respond") { chat.generateChat() }
     )
