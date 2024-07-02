@@ -3,6 +3,7 @@ package Static
 import androidx.compose.material.Colors
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.graphics.Color
+import com.mikepenz.markdown.model.MarkdownColors
 
 val appColors: Colors = Colors(
     isLight = false,  // Set to false for a dark theme
@@ -19,3 +20,21 @@ val appColors: Colors = Colors(
     surface = Color(0xFF44475A),           // Current Line
     onSurface = Color(0xFFF8F8F2)          // Foreground
 )
+
+class appMarkdownColors(): MarkdownColors{
+    override val codeBackground: Color
+        get() = appColors.surface
+    override val codeText: Color
+        get() = appColors.onSurface
+    override val dividerColor: Color
+        get() = appColors.secondary
+    override val inlineCodeBackground: Color
+        get() = appColors.surface
+    override val inlineCodeText: Color
+        get() = appColors.onSurface
+    override val linkText: Color
+        get() = appColors.error
+    override val text: Color
+        get() = appColors.onPrimary
+
+}

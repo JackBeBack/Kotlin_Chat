@@ -1,5 +1,6 @@
 package UI
 
+import Static.appMarkdownColors
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +16,8 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
@@ -22,19 +25,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.mohamedrejeb.richeditor.model.rememberRichTextState
-import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import dev.langchain4j.data.message.ChatMessage
 import dev.langchain4j.data.message.ChatMessageType
+import androidx.compose.runtime.*
+import com.mikepenz.markdown.compose.Markdown
+import com.mikepenz.markdown.model.MarkdownColors
 import org.jetbrains.skia.FontStyle
 import kotlin.contracts.contract
 
 @Composable
 fun ChatMessage(modifier: Modifier = Modifier, message: ChatMessage) {
-    val state = rememberRichTextState()
-    LaunchedEffect(message){
-        state.setMarkdown(message.text())
-    }
 
 
 
@@ -46,7 +46,12 @@ fun ChatMessage(modifier: Modifier = Modifier, message: ChatMessage) {
             Spacer(Modifier.size(10.dp))
         }
         Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colors.surface).fillMaxWidth()){
-            Text(modifier = Modifier.padding(8.dp), text = "${message.text()}", color = MaterialTheme.colors.onSurface)
+            //Text(modifier = Modifier.padding(8.dp), text = "${message.text()}", color = MaterialTheme.colors.onSurface)
+            Markdown(
+                message.text(),
+                colors = appMarkdownColors,
+                typography = markdownTypography()
+            )
         }
     }
 }

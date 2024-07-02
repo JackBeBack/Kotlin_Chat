@@ -24,8 +24,8 @@ dependencies {
     //Langchain
     implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
     implementation("dev.langchain4j:langchain4j:0.31.0")
-    //Richtext
-    implementation("com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc05-k2")
+    //Markdown
+    implementation("com.mikepenz:multiplatform-markdown-renderer:0.23.0")
 }
 
 compose.desktop {
