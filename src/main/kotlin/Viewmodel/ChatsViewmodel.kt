@@ -1,5 +1,6 @@
 package Viewmodel
 
+import androidx.compose.runtime.mutableStateOf
 import dev.ai4j.openai4j.chat.AssistantMessage
 import dev.langchain4j.data.message.AiMessage
 import dev.langchain4j.data.message.ChatMessage
@@ -19,6 +20,9 @@ class ChatsModel() {
     private val _currentChat = MutableStateFlow<List<ChatMessage>>(listOf())
     val currentChat: StateFlow<List<ChatMessage>> = _currentChat
 
+    private val _followUpQuestions = MutableStateFlow<List<String>>(listOf())
+    val followUpQuestions: StateFlow<List<String>> = _followUpQuestions
+
     init {
         val apiKey = System.getenv("OPENAI_API_KEY")
 
@@ -30,6 +34,10 @@ class ChatsModel() {
 
     companion object {
         val instance: ChatsModel = ChatsModel()
+    }
+
+    fun removeFollowUpQuestion(remove: String){
+        _followUpQuestions.tryEmit(_followUpQuestions.value.filter { it != remove })
     }
 
     fun appendUserMessage(message: String) {
@@ -65,7 +73,7 @@ class ChatsModel() {
         }
     }
 
-    fun generateChat(onNewToken: (String) -> Unit = {}, onFinish: (String) -> Unit = {}){
+    fun generateChat(onNewToken: (String) -> Unit = {}, autoGenFollowUpQuestions: Boolean = false, onFinish: (String) -> Unit = {}){
         if (currentChat.value.isNotEmpty()) {
             var currentText = ""
             model.generate(currentChat.value, object : StreamingResponseHandler<AiMessage> {
@@ -79,6 +87,7 @@ class ChatsModel() {
                 override fun onComplete(response: Response<AiMessage>) {
                     onFinish(response.content().text())
                     appendAssistantMessage(response.content().text())
+                    if (autoGenFollowUpQuestions) generateFollowUpQuestions()
                 }
 
                 override fun onError(error: Throwable) {
@@ -101,6 +110,37 @@ class ChatsModel() {
 
             override fun onComplete(response: Response<AiMessage>) {
                 onFinish(response.content().text())
+            }
+
+            override fun onError(error: Throwable) {
+                error.printStackTrace()
+            }
+        })
+    }
+
+    fun generateFollowUpQuestions(){
+        val history: MutableList<ChatMessage> = mutableListOf(
+            SystemMessage.from("You are a FollowUp Question Generator, you receive a Chat History " +
+                    "and your Task is to Generate a series of questions that further explore the topic." +
+                    "Only answer with the Questions where each question is in a new line")
+        )
+
+        _currentChat.value.forEach{
+            if (it.type() != ChatMessageType.SYSTEM){
+                history.add(it)
+            }
+        }
+
+        model.generate(history, object : StreamingResponseHandler<AiMessage> {
+
+            override fun onNext(token: String) {
+
+            }
+
+            override fun onComplete(response: Response<AiMessage>) {
+                println(response.content().text())
+                val questions = response.content().text().split("\n").filter { !it.isBlank() }
+                _followUpQuestions.tryEmit(questions)
             }
 
             override fun onError(error: Throwable) {

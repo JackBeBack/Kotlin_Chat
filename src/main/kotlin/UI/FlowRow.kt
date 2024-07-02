@@ -20,6 +20,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.primarySurface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,10 +46,12 @@ fun <T>flowRow(modifier: Modifier, items: List<T>, itemComposable: @Composable (
 }
 
 @Composable
-fun stringFlowRow(modifier: Modifier, strings: List<String>){
+fun stringFlowRow(modifier: Modifier, strings: List<String>, onClick: (String) -> Unit, onDelete: (String) -> Unit = {}){
     flowRow(modifier, strings){
-        Chip(text = it){
-            //on delete
+        Chip(modifier = Modifier.clickable{
+            onClick(it)
+        }, text = it){
+            onDelete(it)
         }
     }
 }
@@ -67,7 +70,7 @@ fun Chip(
         modifier = modifier
             .padding(top = 2.dp)
             .clip(RoundedCornerShape(50))
-            .background(Color.LightGray)
+            .background(MaterialTheme.colors.secondary)
             .padding(horizontal = 5.dp, vertical = 4.dp)
             .pointerMoveFilter(
                 onEnter = {
@@ -86,7 +89,7 @@ fun Chip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.DarkGray,
+                tint = MaterialTheme.colors.onSecondary,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -98,7 +101,8 @@ fun Chip(
             maxLines = if (isHovered.value) 4 else 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.body2,
-            modifier = Modifier
+            modifier = Modifier,
+            color = MaterialTheme.colors.onSecondary
         )
 
         Spacer(modifier = Modifier.width(2.dp))
@@ -113,7 +117,7 @@ fun Chip(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Delete",
-                    tint = Color.DarkGray,
+                    tint = MaterialTheme.colors.onSecondary,
                     modifier = Modifier.size(15.dp) // Adjust the icon size if needed
                 )
             }

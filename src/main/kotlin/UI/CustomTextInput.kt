@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.TextRange
@@ -102,7 +103,8 @@ fun CustomTextInput(
                                     false
                                 }
                             },
-                        textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colors.onSurface)
+                        textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colors.onSurface),
+                        cursorBrush = SolidColor(MaterialTheme.colors.onSurface)
                     )
                     if (text.text.isEmpty()) {
                         Text(
