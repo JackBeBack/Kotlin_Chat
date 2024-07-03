@@ -13,6 +13,7 @@ import dev.langchain4j.model.openai.OpenAiStreamingChatModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Duration.ofSeconds
+import kotlin.math.min
 
 class ChatsModel() {
     private val model: OpenAiStreamingChatModel
@@ -52,6 +53,35 @@ class ChatsModel() {
             add(SystemMessage.from(message))
         }
         _currentChat.tryEmit(newHistory)
+    }
+
+    fun generateChatTitle(onFinish: (String) -> Unit){
+        val history: MutableList<ChatMessage> = mutableListOf(
+            SystemMessage.from("You are a Chat Title Generator, you receive a Chat History " +
+                    "and your Task is to Generate a Title." +
+                    "Only answer with the Title and nothing else")
+        )
+
+        _currentChat.value.forEach{
+            if (it.type() != ChatMessageType.SYSTEM){
+                history.add(it)
+            }
+        }
+
+        model.generate(history, object : StreamingResponseHandler<AiMessage> {
+
+            override fun onNext(token: String) {
+
+            }
+
+            override fun onComplete(response: Response<AiMessage>) {
+                onFinish(response.content().text())
+            }
+
+            override fun onError(error: Throwable) {
+                error.printStackTrace()
+            }
+        })
     }
 
 
@@ -118,10 +148,10 @@ class ChatsModel() {
         })
     }
 
-    fun generateFollowUpQuestions(){
+    fun generateFollowUpQuestions(max: Int = 3){
         val history: MutableList<ChatMessage> = mutableListOf(
             SystemMessage.from("You are a FollowUp Question Generator, you receive a Chat History " +
-                    "and your Task is to Generate a series of questions that further explore the topic." +
+                    "and your Task is to Generate a series of short questions that further explore the topic." +
                     "Only answer with the Questions where each question is in a new line")
         )
 
@@ -139,7 +169,10 @@ class ChatsModel() {
 
             override fun onComplete(response: Response<AiMessage>) {
                 println(response.content().text())
-                val questions = response.content().text().split("\n").filter { !it.isBlank() }
+                var questions = response.content().text().split("\n").filter { it.isNotBlank() }.map {
+                    it.replace("-", "")
+                }
+                questions = questions.subList(0, min(max, questions.size-1))
                 _followUpQuestions.tryEmit(questions)
             }
 

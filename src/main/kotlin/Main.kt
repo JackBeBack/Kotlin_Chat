@@ -1,4 +1,5 @@
 import Static.appColors
+import Viewmodel.WindowViewModel
 import Views.ChatView
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.material.MaterialTheme
@@ -25,6 +26,7 @@ fun App() {
 }
 
 fun main() = application {
+    val windowTitle by WindowViewModel.instance.windowTitle.collectAsState()
     val toolkit = Toolkit.getDefaultToolkit()
     val screenSize = toolkit.screenSize
     val screenWidth = screenSize.width.dp
@@ -38,8 +40,7 @@ fun main() = application {
         position = WindowPosition(x = gap, y = gap),
         size = DpSize(screenWidth - (gap*2), screenHeight - (gap*2))
     )
-    var title by remember { mutableStateOf("Window Title") }
-    Window(onCloseRequest = ::exitApplication, state = state, title = title) {
+    Window(onCloseRequest = ::exitApplication, state = state, title = windowTitle) {
         App()
     }
 }

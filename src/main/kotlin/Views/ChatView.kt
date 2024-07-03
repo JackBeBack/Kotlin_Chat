@@ -5,6 +5,7 @@ import UI.CustomTextInput
 import UI.TextInputOption
 import UI.stringFlowRow
 import Viewmodel.ChatsModel
+import Viewmodel.WindowViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,14 +35,25 @@ import kotlinx.coroutines.launch
 fun ChatView() {
     val scope = rememberCoroutineScope()
     val chat = remember { ChatsModel.instance }
+    val window = WindowViewModel.instance
+
+    val windowTitle by window.windowTitle.collectAsState()
 
     val chatHistory by chat.currentChat.collectAsState()
     val followUpQuestions by chat.followUpQuestions.collectAsState()
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(Unit) {
-        //chat.setSystemMessage("Format your output to Markdown")
+    LaunchedEffect(chatHistory) {
+        if (chatHistory.size == 3 && windowTitle == "New Chat"){
+            chat.generateChatTitle {
+                window.windowTitle.tryEmit(it)
+            }
+        }
+    }
+
+    LaunchedEffect(Unit){
+        chat.setSystemMessage("you are a pirate")
     }
 
     val leftButtonOptions = listOf<TextInputOption>(

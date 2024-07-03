@@ -21,7 +21,7 @@ val appColors: Colors = Colors(
     onSurface = Color(0xFFF8F8F2)          // Foreground
 )
 
-class appMarkdownColors(): MarkdownColors{
+class AppMarkdownColors(): MarkdownColors{
     override val codeBackground: Color
         get() = appColors.surface
     override val codeText: Color
@@ -31,10 +31,10 @@ class appMarkdownColors(): MarkdownColors{
     override val inlineCodeBackground: Color
         get() = appColors.surface
     override val inlineCodeText: Color
-        get() = appColors.onSurface
+        get() = appColors.primaryVariant
     override val linkText: Color
-        get() = appColors.error
+        get() = appColors.primary
     override val text: Color
-        get() = appColors.onPrimary
+        get() = appColors.onSurface
 
 }
