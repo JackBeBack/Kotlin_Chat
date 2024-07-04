@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: dev.langchain4j:langchain4j:0.31.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="dev.langchain4j" artifactId="langchain4j" version="0.31.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/dev.langchain4j/langchain4j/0.31.0/fa09089f699b7f8d5b16f8583b65a323d70a833/langchain4j-0.31.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
