@@ -40,6 +40,7 @@ class ChatsModel(val type: ModelType) {
                 OllamaStreamingChatModel.builder()
                     .baseUrl("http://localhost:11434")
                     .modelName("llama3")
+                    .temperature(1.0)
                     //.modelName("wizard-vicuna")
                     //.modelName("dolphin-mistral")
                     .build()
@@ -117,7 +118,7 @@ class ChatsModel(val type: ModelType) {
         }
     }
 
-    fun generateChat(onNewToken: (String) -> Unit = {}, autoGenFollowUpQuestions: Boolean = false, onFinish: (String) -> Unit = {}){
+    fun generateChat(onNewToken: (String) -> Unit = {}, onFinish: (String) -> Unit = {}){
         if (currentChat.value.isNotEmpty()) {
             var currentText = ""
             model.generate(currentChat.value, object : StreamingResponseHandler<AiMessage> {
@@ -131,7 +132,6 @@ class ChatsModel(val type: ModelType) {
                 override fun onComplete(response: Response<AiMessage>) {
                     onFinish(response.content().text())
                     appendAssistantMessage(response.content().text())
-                    if (autoGenFollowUpQuestions) generateFollowUpQuestions()
                 }
 
                 override fun onError(error: Throwable) {
@@ -162,29 +162,8 @@ class ChatsModel(val type: ModelType) {
         })
     }
 
-    fun generateFollowUpQuestions(max: Int = 3){
+    fun generateFollowUpQuestions(max: Int = 4){
         val history: MutableList<ChatMessage> = mutableListOf()
-
-        when(type){
-            ModelType.OLLAMA -> {
-                history.add(SystemMessage.from("You are a Follow-Up Question Generator, you receive a Chat History " +
-                        "and your Task is to Generate a series of short questions that further explore the topic." +
-                        "Only answer with the Questions where each question is in a new line"))
-            }
-            ModelType.OPENAI -> {
-                history.add(SystemMessage.from("You are a Follow-Up Question Generator, you receive a Chat History " +
-                        "and your Task is to Generate a series of short questions that further explore the topic." +
-                        "Only answer with the Questions where each question is in a new line"))
-            }
-        }
-
-        val followUpModel = when(type){
-            ModelType.OPENAI -> model
-            ModelType.OLLAMA -> OllamaStreamingChatModel.builder()
-                .baseUrl("http://localhost:11434")
-                .modelName("wizard-vicuna")
-                .build()
-        }
 
         _currentChat.value.forEach{
             if (it.type() != ChatMessageType.SYSTEM){
@@ -192,7 +171,11 @@ class ChatsModel(val type: ModelType) {
             }
         }
 
-        followUpModel.generate(history, object : StreamingResponseHandler<AiMessage> {
+        history.add(UserMessage.from("What are further questions to explore this topic?\" +\n" +
+                "                        \"Only answer with the Questions where each question is in a new line"))
+
+
+        model.generate(history.toList(), object : StreamingResponseHandler<AiMessage> {
 
             override fun onNext(token: String) {
             }
@@ -200,10 +183,11 @@ class ChatsModel(val type: ModelType) {
             override fun onComplete(response: Response<AiMessage>) {
                 try {
                     println("Questions: ${response.content().text()}")
-                    var questions = response.content().text().split("\n").filter { it.isNotBlank() }.map {
+                    var questions = response.content().text().split("\n").filter { it.isNotBlank() && !it.contains(":")}.map {
                         it.replace("-", "")
                     }
-                    questions = questions.subList(0, min(max, max(questions.size-1, 0)))
+                    if (questions.size > max) questions = questions.subList(0, max)
+
                     _followUpQuestions.tryEmit(questions)
                 } catch (e: Exception){
                     //
@@ -215,5 +199,9 @@ class ChatsModel(val type: ModelType) {
                 error.printStackTrace()
             }
         })
+    }
+
+    fun clearFollowUpQuestion() {
+           _followUpQuestions.tryEmit(listOf())
     }
 }

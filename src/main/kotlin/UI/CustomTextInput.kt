@@ -131,7 +131,7 @@ fun CustomTextInput(
                     )
                 }
             } else {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colors.primaryVariant)
             }
         }
     }

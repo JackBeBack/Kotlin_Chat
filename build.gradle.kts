@@ -23,6 +23,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     //Langchain
     implementation("dev.langchain4j:langchain4j-open-ai:0.31.0")
+    implementation("dev.langchain4j:langchain4j-ollama:0.31.0")
     implementation("dev.langchain4j:langchain4j:0.31.0")
     //Markdown
     implementation("com.mikepenz:multiplatform-markdown-renderer:0.23.0")

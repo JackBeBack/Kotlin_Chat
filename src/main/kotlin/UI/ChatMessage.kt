@@ -2,6 +2,7 @@ package UI
 
 import Static.AppMarkdownColors
 import Static.AppTypography
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,20 +22,34 @@ import dev.langchain4j.data.message.ChatMessageType
 
 @Composable
 fun ChatMessage(modifier: Modifier = Modifier, message: ChatMessage) {
-    Row(modifier = modifier.padding(start = 8.dp, end = 8.dp), verticalAlignment = Alignment.Top){
-        if(message.type() != ChatMessageType.USER){
-            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colors.primaryVariant)){
-                Image(modifier = Modifier.align(Center), painter = if (message.type() == ChatMessageType.AI) painterResource("img/ai.png") else painterResource("img/settings.png"), contentDescription = "")
+    if (message.type() != ChatMessageType.SYSTEM) {
+        Row(
+            modifier = modifier.padding(start = 8.dp, end = 8.dp).animateContentSize(),
+            verticalAlignment = Alignment.Top
+        ) {
+            if (message.type() != ChatMessageType.USER) {
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colors.primaryVariant)) {
+                    Image(
+                        modifier = Modifier.align(Center),
+                        painter = if (message.type() == ChatMessageType.AI) painterResource("img/ai.png") else painterResource(
+                            "img/settings.png"
+                        ),
+                        contentDescription = ""
+                    )
+                }
+                Spacer(Modifier.size(10.dp))
             }
-            Spacer(Modifier.size(10.dp))
-        }
-        Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colors.surface).fillMaxWidth()){
-            Markdown(
-                modifier = Modifier.padding(8.dp),
-                content = message.text(),
-                colors = AppMarkdownColors(),
-                typography = AppTypography()
-            )
+            Box(
+                modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colors.surface)
+                    .fillMaxWidth()
+            ) {
+                Markdown(
+                    modifier = Modifier.padding(8.dp),
+                    content = message.text(),
+                    colors = AppMarkdownColors(),
+                    typography = AppTypography()
+                )
+            }
         }
     }
 }
