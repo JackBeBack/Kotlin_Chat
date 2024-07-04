@@ -1,0 +1,76 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android/IntelliJ
+.DS_Store
+*.apk
+*.ap_
+*.keystore
+output.json
+
+# OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IntelliJ specific
+out/
+*.log
+
+# Android specific
+captures/
+externalNativeBuild/
+cxx/
+
+# JetBrains
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/usage.statistics.xml
+.idea/**/dictionaries
+.idea/**/shelf
+
+# Build files
+build/
+gen/
+bin/
+
+# Kotlin
+*.kt~
+*.kts~
+
+# Compose
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/dictionaries
+.idea/assetWizardSettings.xml
+.idea/assetIndex/
+.idea/vcs.xml
+.idea/misc.xml
+*.idea/modules.xml
+*.idea/workspace.xml
+*.idea/.name
+.idea/gradle.xml
+.idea/libraries/
+.idea/modules/
+.idea/codeStyles/
+.idea/encodings.xml
+.idea/gradle/
+.idea/jarRepositories.xml
+.idea/kotlinCompilers.xml
+.idea/kotlinc.xml
+.idea/shelf/
+.idea/tasks/
+.idea/vcs/
+.idea/.gitignore
