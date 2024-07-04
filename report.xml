@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="9B201FFAZ006TR" tests="1" failures="1" time="58">
+    <testcase id="login" name="login" classname="login" time="58" status="ERROR">
+      <failure>Assertion is false: "Contacts" is visible</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
