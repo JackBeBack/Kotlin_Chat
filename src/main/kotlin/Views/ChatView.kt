@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -27,7 +28,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.langchain4j.agent.tool.JsonSchemaProperty.items
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -37,28 +37,23 @@ fun ChatView() {
     val chat = remember { ChatsModel.instance }
     val window = WindowViewModel.instance
 
-    val windowTitle by window.windowTitle.collectAsState()
-
     val chatHistory by chat.currentChat.collectAsState()
     val followUpQuestions by chat.followUpQuestions.collectAsState()
 
     val listState = rememberLazyListState()
 
     LaunchedEffect(chatHistory) {
-        if (chatHistory.size == 3 && windowTitle == "New Chat"){
-            chat.generateChatTitle {
-                window.windowTitle.tryEmit(it)
-            }
-        }
+
     }
 
     LaunchedEffect(Unit){
-        chat.setSystemMessage("you are a pirate")
+        //chat.setSystemMessage("you are a banana")
     }
 
-    val leftButtonOptions = listOf<TextInputOption>(
+    val leftButtonOptions = listOf(
         TextInputOption(Icons.AutoMirrored.Default.ExitToApp, "AI Respond") { chat.generateChat() },
-        TextInputOption(Icons.AutoMirrored.Outlined.List, "Generate Questions") { chat.generateFollowUpQuestions() }
+        TextInputOption(Icons.AutoMirrored.Outlined.List, "Generate Questions") { chat.generateFollowUpQuestions() },
+        TextInputOption(Icons.AutoMirrored.Outlined.KeyboardArrowLeft, "Generate Title") { chat.generateChatTitle { window.windowTitle.tryEmit(it) } }
     )
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
 

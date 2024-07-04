@@ -1,22 +1,24 @@
 package Viewmodel
 
-import androidx.compose.runtime.mutableStateOf
-import dev.ai4j.openai4j.chat.AssistantMessage
-import dev.langchain4j.data.message.AiMessage
-import dev.langchain4j.data.message.ChatMessage
-import dev.langchain4j.data.message.ChatMessageType
-import dev.langchain4j.data.message.SystemMessage
-import dev.langchain4j.data.message.UserMessage
+import dev.langchain4j.data.message.*
 import dev.langchain4j.model.StreamingResponseHandler
-import dev.langchain4j.model.output.Response
+import dev.langchain4j.model.chat.StreamingChatLanguageModel
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel
+import dev.langchain4j.model.output.Response
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Duration.ofSeconds
+import kotlin.math.max
 import kotlin.math.min
 
-class ChatsModel() {
-    private val model: OpenAiStreamingChatModel
+enum class ModelType{
+    OPENAI,
+    OLLAMA
+}
+
+class ChatsModel(val type: ModelType) {
+    private var model: StreamingChatLanguageModel
 
     private val _currentChat = MutableStateFlow<List<ChatMessage>>(listOf())
     val currentChat: StateFlow<List<ChatMessage>> = _currentChat
@@ -27,14 +29,26 @@ class ChatsModel() {
     init {
         val apiKey = System.getenv("OPENAI_API_KEY")
 
-        model = OpenAiStreamingChatModel.builder()
-            .apiKey(apiKey)
-            .timeout(ofSeconds(100))
-            .build()
+        model = when(type){
+            ModelType.OPENAI -> {
+                OpenAiStreamingChatModel.builder()
+                    .apiKey(apiKey)
+                    .timeout(ofSeconds(100))
+                    .build()
+            }
+            ModelType.OLLAMA -> {
+                OllamaStreamingChatModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .modelName("llama3")
+                    //.modelName("wizard-vicuna")
+                    //.modelName("dolphin-mistral")
+                    .build()
+            }
+        }
     }
 
     companion object {
-        val instance: ChatsModel = ChatsModel()
+        val instance: ChatsModel = ChatsModel(ModelType.OLLAMA)
     }
 
     fun removeFollowUpQuestion(remove: String){
@@ -149,11 +163,28 @@ class ChatsModel() {
     }
 
     fun generateFollowUpQuestions(max: Int = 3){
-        val history: MutableList<ChatMessage> = mutableListOf(
-            SystemMessage.from("You are a FollowUp Question Generator, you receive a Chat History " +
-                    "and your Task is to Generate a series of short questions that further explore the topic." +
-                    "Only answer with the Questions where each question is in a new line")
-        )
+        val history: MutableList<ChatMessage> = mutableListOf()
+
+        when(type){
+            ModelType.OLLAMA -> {
+                history.add(SystemMessage.from("You are a Follow-Up Question Generator, you receive a Chat History " +
+                        "and your Task is to Generate a series of short questions that further explore the topic." +
+                        "Only answer with the Questions where each question is in a new line"))
+            }
+            ModelType.OPENAI -> {
+                history.add(SystemMessage.from("You are a Follow-Up Question Generator, you receive a Chat History " +
+                        "and your Task is to Generate a series of short questions that further explore the topic." +
+                        "Only answer with the Questions where each question is in a new line"))
+            }
+        }
+
+        val followUpModel = when(type){
+            ModelType.OPENAI -> model
+            ModelType.OLLAMA -> OllamaStreamingChatModel.builder()
+                .baseUrl("http://localhost:11434")
+                .modelName("wizard-vicuna")
+                .build()
+        }
 
         _currentChat.value.forEach{
             if (it.type() != ChatMessageType.SYSTEM){
@@ -161,19 +192,23 @@ class ChatsModel() {
             }
         }
 
-        model.generate(history, object : StreamingResponseHandler<AiMessage> {
+        followUpModel.generate(history, object : StreamingResponseHandler<AiMessage> {
 
             override fun onNext(token: String) {
-
             }
 
             override fun onComplete(response: Response<AiMessage>) {
-                println(response.content().text())
-                var questions = response.content().text().split("\n").filter { it.isNotBlank() }.map {
-                    it.replace("-", "")
+                try {
+                    println("Questions: ${response.content().text()}")
+                    var questions = response.content().text().split("\n").filter { it.isNotBlank() }.map {
+                        it.replace("-", "")
+                    }
+                    questions = questions.subList(0, min(max, max(questions.size-1, 0)))
+                    _followUpQuestions.tryEmit(questions)
+                } catch (e: Exception){
+                    //
+                    println("Error: ${response.content().text()}")
                 }
-                questions = questions.subList(0, min(max, questions.size-1))
-                _followUpQuestions.tryEmit(questions)
             }
 
             override fun onError(error: Throwable) {
