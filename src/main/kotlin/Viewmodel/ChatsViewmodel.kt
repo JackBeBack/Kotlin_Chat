@@ -12,13 +12,15 @@ import java.time.Duration.ofSeconds
 import kotlin.math.max
 import kotlin.math.min
 
-enum class ModelType{
-    OPENAI,
-    OLLAMA
+enum class ModelType(val modelName: String){
+    OPENAI_GPT3_TURBO("GPT-3.5 Turbo"),
+    OLLAMA_LLAMA_2("LLAMA2"),
+    OLLAMA_LLAMA_3("LLAMA3"),
+    OLLAMA_WIZARD_VICUNA("Wizard Vicuna")
 }
 
 class ChatsModel(val type: ModelType) {
-    private var model: StreamingChatLanguageModel
+    private lateinit var model: StreamingChatLanguageModel
 
     private val _currentChat = MutableStateFlow<List<ChatMessage>>(listOf())
     val currentChat: StateFlow<List<ChatMessage>> = _currentChat
@@ -26,17 +28,33 @@ class ChatsModel(val type: ModelType) {
     private val _followUpQuestions = MutableStateFlow<List<String>>(listOf())
     val followUpQuestions: StateFlow<List<String>> = _followUpQuestions
 
-    init {
-        val apiKey = System.getenv("OPENAI_API_KEY")
+    private val _currentModel = MutableStateFlow<ModelType>(type)
+    val currentModel: StateFlow<ModelType> = _currentModel
 
+    init {
+        initModle(type)
+    }
+
+    fun initModle(type: ModelType){
+        val apiKey = System.getenv("OPENAI_API_KEY")
         model = when(type){
-            ModelType.OPENAI -> {
+            ModelType.OPENAI_GPT3_TURBO -> {
+                if(apiKey.isNullOrBlank()) throw IllegalArgumentException("No OpenAI Api key found. Add it as a OPENAI_API_KEY System variable")
                 OpenAiStreamingChatModel.builder()
                     .apiKey(apiKey)
                     .timeout(ofSeconds(100))
                     .build()
             }
-            ModelType.OLLAMA -> {
+            ModelType.OLLAMA_LLAMA_2 -> {
+                OllamaStreamingChatModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .modelName("llama2")
+                    .temperature(1.0)
+                    //.modelName("wizard-vicuna")
+                    //.modelName("dolphin-mistral")
+                    .build()
+            }
+            ModelType.OLLAMA_LLAMA_3 -> {
                 OllamaStreamingChatModel.builder()
                     .baseUrl("http://localhost:11434")
                     .modelName("llama3")
@@ -45,11 +63,19 @@ class ChatsModel(val type: ModelType) {
                     //.modelName("dolphin-mistral")
                     .build()
             }
+            ModelType.OLLAMA_WIZARD_VICUNA -> {
+                OllamaStreamingChatModel.builder()
+                    .baseUrl("http://localhost:11434")
+                    .temperature(1.0)
+                    .modelName("wizard-vicuna")
+                    .build()
+            }
         }
+        _currentModel.tryEmit(type)
     }
 
     companion object {
-        val instance: ChatsModel = ChatsModel(ModelType.OLLAMA)
+        val instance: ChatsModel = ChatsModel(ModelType.OPENAI_GPT3_TURBO)
     }
 
     fun removeFollowUpQuestion(remove: String){
