@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ fun CustomTextInput(
     hintText: String = "Enter some Text",
     isLoading: Boolean = false,
     rightButtonClick: (String) -> Unit = {},
+    rightButtonInfoText: String = "OK",
     options: List<TextInputOption> = emptyList()
 ) {
     var text by remember { mutableStateOf(TextFieldValue("")) }
@@ -52,7 +54,9 @@ fun CustomTextInput(
                     isMenuExpanded = false
                 }) {
                     Row(){
-                        Icon(option.icon, "")
+                        if (option.icon != null) Icon(option.icon, "", modifier = Modifier.size(25.dp))
+                        if (option.png != null) Icon(painter = painterResource(option.png), "", modifier = Modifier.size(25.dp))
+
                         Spacer(Modifier.size(8.dp))
                         Text(text = option.text)
                     }
@@ -131,11 +135,14 @@ fun CustomTextInput(
                     )
                 }
             } else {
-                CircularProgressIndicator(color = MaterialTheme.colors.primaryVariant)
+                Box {
+                    CircularProgressIndicator(color = MaterialTheme.colors.primaryVariant)
+                    Text(modifier = Modifier.align(Alignment.Center), text = rightButtonInfoText)
+                }
             }
         }
     }
 }
 
 
-data class TextInputOption(val icon: ImageVector, val text: String, val action: () -> Unit)
+data class TextInputOption(val icon: ImageVector? = null, val png: String? = null, val text: String, val action: () -> Unit)

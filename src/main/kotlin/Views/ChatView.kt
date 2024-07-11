@@ -16,10 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -32,6 +36,8 @@ import dev.langchain4j.agent.tool.JsonSchemaProperty.items
 import dev.langchain4j.data.message.ChatMessageType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.awt.FileDialog
+import java.awt.Frame
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -46,6 +52,7 @@ fun ChatView() {
     var showSettings by remember { mutableStateOf(false) }
 
     val windowTitle by window.windowTitle.collectAsState()
+    val tokenPerSecond by chat.tokensPerSecondFlow.collectAsState()
 
     val chatHistory by chat.currentChat.collectAsState()
     val followUpQuestions by chat.followUpQuestions.collectAsState()
@@ -53,7 +60,7 @@ fun ChatView() {
     val listState = rememberLazyListState()
 
     LaunchedEffect(chatHistory) {
-        if (chatHistory.filter { it.type() != ChatMessageType.SYSTEM }.size == 2 && !titleGenerated){
+        if (chatHistory.filter { it.type() != ChatMessageType.SYSTEM }.size == 2 && !titleGenerated) {
             chat.generateChatTitle {
                 window.windowTitle.tryEmit(it)
             }
@@ -61,18 +68,37 @@ fun ChatView() {
         }
     }
 
-    LaunchedEffect(Unit){
+    LaunchedEffect(Unit) {
         //chat.setSystemMessage("You are a rude Motherfucker and you responses are as unusefull as possible")
         //chat.setSystemMessage("Be as Polite as possible")
         chat.setSystemMessage("Be as Scientific and easy to understand as Possible.")
     }
 
     val leftButtonOptions = listOf<TextInputOption>(
-        TextInputOption(Icons.AutoMirrored.Default.ExitToApp, "AI Respond") { chat.generateChat(){
-            isGenerating = false
-        } },
-        TextInputOption(Icons.AutoMirrored.Outlined.List, "Generate Questions") { chat.generateFollowUpQuestions() },
-        TextInputOption(Icons.Default.Settings, "Settings") { showSettings = !showSettings }
+        TextInputOption(Icons.AutoMirrored.Default.ExitToApp, text = "AI Respond") {
+            chat.generateChat() {
+                isGenerating = false
+            }
+        },
+        TextInputOption(
+            icon = Icons.AutoMirrored.Outlined.List,
+            text = "Generate Questions"
+        ) { chat.generateFollowUpQuestions() },
+        TextInputOption(icon = Icons.Default.Settings, text = "Settings") { showSettings = !showSettings },
+        TextInputOption(icon = Icons.Default.Delete, text = "Clear Chat") {
+            window.windowTitle.tryEmit("New Chat")
+            titleGenerated = false
+            chat.clear()
+        },
+        TextInputOption(png = "/img/save.png", text = "Save Chat") {
+            val fileDialog = FileDialog(Frame(), "Select File", FileDialog.LOAD)
+            fileDialog.isVisible = true
+            fileDialog.file
+            val file = fileDialog.files.firstOrNull()
+            println(file)
+            chat.saveChat()
+        },
+        TextInputOption(png = "/img/load.png", text = "Load Chat") { chat.loadChat() },
     )
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
 
@@ -97,9 +123,9 @@ fun ChatView() {
                     chat.generateChat(onNewToken = {
                         scope.launch() {
                             isGenerating = true
-                            listState.animateScrollToItem(chatHistory.size - 1)
+                            listState.animateScrollToItem(chatHistory.size)
                         }
-                    }){
+                    }) {
                         scope.launch {
                             delay(1000)
                             chat.generateFollowUpQuestions()
@@ -118,21 +144,22 @@ fun ChatView() {
                     chat.generateChat(onNewToken = {
 
                         scope.launch() {
-                            listState.animateScrollToItem(chatHistory.size - 1)
+                            listState.animateScrollToItem(chatHistory.size)
                         }
-                    }){
+                    }) {
                         scope.launch {
                             chat.generateFollowUpQuestions()
-                            listState.animateScrollToItem(chatHistory.size - 1)
+                            listState.animateScrollToItem(chatHistory.size)
                             isGenerating = false
                         }
                     }
                 },
+                rightButtonInfoText = tokenPerSecond.toString(),
                 options = leftButtonOptions
             )
         }
 
-        if(showSettings){
+        if (showSettings) {
             SettingsView(Modifier.align(Alignment.Center), onBack = {
                 showSettings = false
             })

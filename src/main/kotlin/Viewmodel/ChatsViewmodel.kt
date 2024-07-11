@@ -6,11 +6,14 @@ import dev.langchain4j.model.chat.StreamingChatLanguageModel
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel
 import dev.langchain4j.model.output.Response
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.time.Duration.ofSeconds
-import kotlin.math.max
-import kotlin.math.min
+
 
 enum class ModelType(val modelName: String){
     OPENAI_GPT3_TURBO("GPT-3.5 Turbo"),
@@ -19,8 +22,16 @@ enum class ModelType(val modelName: String){
     OLLAMA_WIZARD_VICUNA("Wizard Vicuna")
 }
 
-class ChatsModel(val type: ModelType) {
+class ChatsModel(val type: ModelType, scope: CoroutineScope) {
+
+    companion object {
+        @OptIn(DelicateCoroutinesApi::class)
+        val instance: ChatsModel = ChatsModel(ModelType.OPENAI_GPT3_TURBO, GlobalScope)
+    }
+
+    private var tokensInCurrentSecond = 0
     private lateinit var model: StreamingChatLanguageModel
+    val tokensPerSecondFlow = MutableStateFlow(0)
 
     private val _currentChat = MutableStateFlow<List<ChatMessage>>(listOf())
     val currentChat: StateFlow<List<ChatMessage>> = _currentChat
@@ -33,6 +44,15 @@ class ChatsModel(val type: ModelType) {
 
     init {
         initModle(type)
+
+        // Start a coroutine to update tokens per second
+        scope.launch {
+            while (isActive) {
+                delay(1000)
+                tokensPerSecondFlow.emit(tokensInCurrentSecond)
+                tokensInCurrentSecond = 0 // Reset counter every second
+            }
+        }
     }
 
     fun initModle(type: ModelType){
@@ -74,9 +94,7 @@ class ChatsModel(val type: ModelType) {
         _currentModel.tryEmit(type)
     }
 
-    companion object {
-        val instance: ChatsModel = ChatsModel(ModelType.OPENAI_GPT3_TURBO)
-    }
+
 
     fun removeFollowUpQuestion(remove: String){
         _followUpQuestions.tryEmit(_followUpQuestions.value.filter { it != remove })
@@ -112,11 +130,11 @@ class ChatsModel(val type: ModelType) {
         model.generate(history, object : StreamingResponseHandler<AiMessage> {
 
             override fun onNext(token: String) {
-
+                tokensInCurrentSecond += 1
             }
 
             override fun onComplete(response: Response<AiMessage>) {
-                onFinish(response.content().text())
+                onFinish(response.content().text() ?: "")
             }
 
             override fun onError(error: Throwable) {
@@ -150,14 +168,15 @@ class ChatsModel(val type: ModelType) {
             model.generate(currentChat.value, object : StreamingResponseHandler<AiMessage> {
 
                 override fun onNext(token: String) {
+                    tokensInCurrentSecond += 1
                     onNewToken(token)
                     currentText += token
                     appendAssistantMessage(currentText)
                 }
 
                 override fun onComplete(response: Response<AiMessage>) {
-                    onFinish(response.content().text())
-                    appendAssistantMessage(response.content().text())
+                    onFinish(currentText)
+                    appendAssistantMessage(currentText)
                 }
 
                 override fun onError(error: Throwable) {
@@ -175,6 +194,7 @@ class ChatsModel(val type: ModelType) {
         model.generate(history, object : StreamingResponseHandler<AiMessage> {
 
             override fun onNext(token: String) {
+                tokensInCurrentSecond += 1
                 onNewToken(token)
             }
 
@@ -204,6 +224,7 @@ class ChatsModel(val type: ModelType) {
         model.generate(history.toList(), object : StreamingResponseHandler<AiMessage> {
 
             override fun onNext(token: String) {
+                tokensInCurrentSecond += 1
             }
 
             override fun onComplete(response: Response<AiMessage>) {
@@ -230,4 +251,21 @@ class ChatsModel(val type: ModelType) {
     fun clearFollowUpQuestion() {
            _followUpQuestions.tryEmit(listOf())
     }
+
+    fun clear() {
+        clearFollowUpQuestion()
+        _currentChat.tryEmit(listOf())
+    }
+
+    fun saveChat() {
+        val converted = _currentChat.value.map { JSONChatMessage(it.type().toString(), it.text()) }
+        val jsonString = Json.encodeToString(converted)
+    }
+
+    fun loadChat() {
+
+    }
 }
+
+@Serializable
+data class JSONChatMessage(val type: String, val text: String)
